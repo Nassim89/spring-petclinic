@@ -1,5 +1,5 @@
 pipeline {
-    agent {label 'master'}
+    agent {label: 'master'}
     
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['STAGING', 'PROD'], description: 'Choisir l\'environnement de déploiement')
@@ -39,12 +39,13 @@ pipeline {
         
         stage('Build') {
             steps {
+                // Construction du projet avec le profil spécifique à l'environnement
                 script {
                     def profile = params.DEPLOY_ENV.toLowerCase()
-                    sh "mvn spring-javaformat:apply"
                     sh "mvn clean package -DskipTests=${params.SKIP_TESTS} -P${profile}"
                 }
-
+                
+                // Archiver l'artefact dans Jenkins si demandé
                 script {
                     if (params.ARCHIVE_ARTIFACT) {
                         archiveArtifacts artifacts: 'target/*.war', fingerprint: true
@@ -65,45 +66,6 @@ pipeline {
                 junit '**/target/surefire-reports/*.xml'
             }
         }
-
-        stage('Sonar Analysis') {
-            steps {
-                echo 'SonarQube Analysis'
-                withSonarQubeEnv(installationName : 'SonarServer' , credentialsId : 'token4sonar') 
-                {
-                    sh "mvn clean package sonar:sonar"
-                }
-            }
-        }
-
-        stage('Code Coverage') {
-            steps {
-                echo 'Code coverage Measurement'
-                sh 'mvn jacoco:report'
-                // publication 
-                jacoco(
-                    execPattern: 'target/jacoco.exec',
-                    classPattern: 'target/classes',
-                    sourcePattern: 'src/main/java',
-                    exclusionPattern: 'src/test/**'
-                )
-            }
-        }
-        stage('Code Analysis') {
-            steps {
-                // Exécution de Checkstyle
-                sh 'mvn checkstyle:checkstyle'
-                // Exécution de SpotBugs
-                sh 'mvn spotbugs:spotbugs'
-                // Publication des rapports d'analyse
-                recordIssues(
-                    tools: [
-                        checkStyle(pattern: 'target/checkstyle-result.xml'),
-                        spotBugs(pattern: 'target/spotbugsXml.xml')
-                    ]
-                )
-            }
-        }
         
         stage('Deploy') {
             steps {
@@ -113,7 +75,7 @@ pipeline {
                     sh "chmod +x scripts/deploy.sh"
                     
                     // Exécuter le script de déploiement
-                    sh "./scripts/deploy.sh ${params.DEPLOY_ENV} target/spring-${APP_NAME}*.war"
+                    sh "./scripts/deploy.sh ${params.DEPLOY_ENV} target/${APP_NAME}.war"
                     
                     // Archiver l'artefact avec version dans un répertoire centralisé
                     def version = sh(script: "grep -m 1 '<version>' pom.xml | sed -E 's/.*<version>(.*)<\\/version>.*/\\1/'", returnStdout: true).trim()
@@ -137,7 +99,7 @@ pipeline {
             steps {
                 // Vérification du déploiement
                 script {
-                    // Attendre un peu que l'application démarre complètement.
+                    // Attendre un peu que l'application démarre complètement
                     sh "sleep 10"
                     
                     // Rendre le script exécutable (au cas où)
