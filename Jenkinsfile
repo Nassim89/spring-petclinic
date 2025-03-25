@@ -39,13 +39,12 @@ pipeline {
         
         stage('Build') {
             steps {
-                // Construction du projet avec le profil spécifique à l'environnement
                 script {
                     def profile = params.DEPLOY_ENV.toLowerCase()
+                    sh "mvn spring-javaformat:apply"
                     sh "mvn clean package -DskipTests=${params.SKIP_TESTS} -P${profile}"
                 }
-                
-                // Archiver l'artefact dans Jenkins si demandé
+
                 script {
                     if (params.ARCHIVE_ARTIFACT) {
                         archiveArtifacts artifacts: 'target/*.war', fingerprint: true
