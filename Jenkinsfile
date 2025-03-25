@@ -1,5 +1,5 @@
 pipeline {
-    agent {label: 'master'}
+    agent {label 'master'}
     
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['STAGING', 'PROD'], description: 'Choisir l\'environnement de déploiement')
