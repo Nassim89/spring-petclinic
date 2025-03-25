@@ -99,7 +99,7 @@ pipeline {
             steps {
                 // Vérification du déploiement
                 script {
-                    // Attendre un peu que l'application démarre complètement
+                    // Attendre un peu que l'application démarre complètement.
                     sh "sleep 10"
                     
                     // Rendre le script exécutable (au cas où)
